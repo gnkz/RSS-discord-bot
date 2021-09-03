@@ -27,4 +27,4 @@ First build with `npm run build` and then run with `npm run start`
 
 ### Using docker-compose
 
-Just run `docker-compose url`
+Just run `docker-compose run`
