@@ -7,10 +7,12 @@ import { RSP__factory } from './contracts/factories/RSP__factory';
 const THIS_CHANNEL_ONLY = process.env.TARGET_CHANNEL;
 const DISCORD_BOT_TOKEN = process.env.DISCORD_BOT_TOKEN;
 const JSON_RPC_URL = process.env.JSON_RPC_URL;
+const RSS_ADDRESS = '0x020bb206cd689d6981182579da490d5f4ceb4c46';
+const RSP_ADDRESS = '0xd1cb076f657a38538a5579e3772788e34e83b19c';
 
 const provider = new ethers.providers.JsonRpcProvider(JSON_RPC_URL);
-const RSS = RSS__factory.connect('0x020bb206cd689d6981182579da490d5f4ceb4c46', provider);
-const RSP = RSP__factory.connect('0xd1cb076f657a38538a5579e3772788e34e83b19c', provider);
+const RSS = RSS__factory.connect(RSS_ADDRESS, provider);
+const RSP = RSP__factory.connect(RSP_ADDRESS, provider);
 const bot = new Discord.Client({ intents: [Intents.FLAGS.GUILDS, Intents.FLAGS.GUILD_MESSAGES] });
 
 async function isHarbinger(id: number) {
@@ -33,7 +35,7 @@ async function angelLevel(id: number) {
             RSP.MAX_ANGEL_LVL(),
         ]);
 
-        return `Angel #${id} is level ${angelLevel}/${maxLevel}`;
+        return `Angel #${id} is level ${angelLevel} out of ${maxLevel}`;
     } catch (err) {
         return `I was not able to get the level for Angel #${id}`;
     }
@@ -41,11 +43,26 @@ async function angelLevel(id: number) {
 
 async function sacrifices(address: string) {
     try {
+        if (!ethers.utils.isAddress(address)) {
+            return `${address} is not a valid ethereum address`;
+        }
         const sacrifices = await RSP.sacrificedRaccoons(address);
 
         return `The address ${address} has performed ${sacrifices} sacrifices`;
     } catch (err) {
         return `I was not able to get the number of sacrifices for the address ${address}`;
+    }
+}
+
+async function rituals() {
+    try {
+        const [numberOfAngels, maxNumberOfAngels] = await Promise.all([RSP.totalSupply(), RSP.MAX_TOKENS()]);
+        const ratio = numberOfAngels.mul(10000).div(maxNumberOfAngels);
+        const percentRatio = (ratio.toNumber() / 100).toFixed(2)
+
+        return `${numberOfAngels.toString()} angels have been summoned out of ${maxNumberOfAngels.toString()} (${percentRatio}%)`
+    } catch (err) {
+        return 'I was not able to determine the number of rituals that have been performed';
     }
 }
 
@@ -60,20 +77,26 @@ async function runCommand(msg: Discord.Message) {
 
     if (parsedCommand.length === 2 && parsedCommand[0] === '!harbinger') {
         const response = await isHarbinger(Number(parsedCommand[1]));
-        msg.reply(String(response));
+        msg.reply(response);
         return;
     }
 
     if (parsedCommand.length === 2 && parsedCommand[0] === '!angellevel') {
         const response = await angelLevel(Number(parsedCommand[1]));
-        msg.reply(response.toString());
+        msg.reply(response);
         return;
 
     }
 
     if (parsedCommand.length === 2 && parsedCommand[0] === '!sacrifices') {
         const response = await sacrifices(parsedCommand[1]);
-        msg.reply(response.toString());
+        msg.reply(response);
+        return;
+    }
+
+    if (parsedCommand.length === 1 && parsedCommand[0] === '!rituals') {
+        const response = await rituals();
+        msg.reply(response);
         return;
     }
 
