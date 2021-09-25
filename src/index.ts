@@ -35,20 +35,30 @@ async function angelLevel(id: number) {
             RSP.MAX_ANGEL_LVL(),
         ]);
 
-        return `Angel #${id} is level ${angelLevel} out of ${maxLevel}`;
+        return `Angel #${id} is level ${angelLevel.add(1)} out of ${maxLevel.add(1)}`;
     } catch (err) {
         return `I was not able to get the level for Angel #${id}`;
     }
 }
 
-async function sacrifices(address: string) {
+async function sacrifices(address?: string) {
     try {
-        if (!ethers.utils.isAddress(address)) {
+        if (address !== undefined && !ethers.utils.isAddress(address)) {
             return `${address} is not a valid ethereum address`;
         }
-        const sacrifices = await RSP.sacrificedRaccoons(address);
 
-        return `The address ${address} has performed ${sacrifices} sacrifices`;
+        if (address) {
+            const sacrifices = await RSP.sacrificedRaccoons(address);
+            return `The address ${address} has performed ${sacrifices} sacrifices`;
+        } else {
+            const total = 10000;
+            const sacrifices = await RSS.balanceOf(RSP_ADDRESS);
+            const ratio = sacrifices.mul(10000).div(total);
+            const percentRatio = (ratio.toNumber() / 100).toFixed(2)
+            return `A total of ${sacrifices} sacrifices has been performed (${percentRatio}% of the total supply)`;
+        }
+
+        
     } catch (err) {
         return `I was not able to get the number of sacrifices for the address ${address}`;
     }
@@ -90,6 +100,12 @@ async function runCommand(msg: Discord.Message) {
 
     if (parsedCommand.length === 2 && parsedCommand[0] === '!sacrifices') {
         const response = await sacrifices(parsedCommand[1]);
+        msg.reply(response);
+        return;
+    }
+
+    if (parsedCommand.length === 1 && parsedCommand[0] === '!sacrifices') {
+        const response = await sacrifices();
         msg.reply(response);
         return;
     }
