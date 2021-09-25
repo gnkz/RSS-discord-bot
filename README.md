@@ -5,6 +5,7 @@
 - `!harbinger #id`: Checks if the raccoon with `#id` is a harbinger
 - `!angellevel #id`: Checks the level of the angel with `#id`
 - `!sacrifices #address`: Checks how many sacrifices the `#address` user has made
+- `!sacrifices`: Checks the total sacrifices that have been made
 
 ## Configuration
 
